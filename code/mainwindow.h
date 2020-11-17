@@ -96,6 +96,13 @@ private:
     QLineSeries* lineSeries_1;// 系列一
     QLineSeries* lineSeries_2;// 系列二
     QLineSeries* lineSeries_3;// 系列三
+    QLineSeries* lineSeries_4;// 系列一
+    QLineSeries* lineSeries_5;// 系列二
+    QLineSeries* lineSeries_6;// 系列三
+    QLineSeries* lineSeries_7;// 系列一
+    QLineSeries* lineSeries_8;// 系列二
+    QLineSeries* lineSeries_9;// 系列三
+    QLineSeries* lineSeries_10;// 系列三
 
     QXlsx::Document xlsx;
 

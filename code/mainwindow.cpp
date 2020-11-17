@@ -11,6 +11,7 @@
 #include <QDateTime>
 #include <stdlib.h>
 #include "mythread.h"
+#include <synchapi.h>
 
 /**************Global Data***********/
 mythread *thread1;
@@ -392,227 +393,227 @@ void MainWindow::on_analyseButton_clicked()
 int analyse_memory_count = 0;
 int sum_exec_count = 0;
 
-/**************************************************************
- * Function Name : detach_zero_memory
- * Description   : Analyze the usage of the first memory
- * Parameters    : min_size
- *                 max_size
- * Returns       : null
- **************************************************************/
-void MainWindow::detach_zero_memory(int min_size, int max_size)
-{
-    QSqlQuery query;
-    QSqlQuery query2;
-    QSqlQuery query3;
-    QSqlQuery query4;
-    int min_malloc_size;
-    int max_malloc_size;
-    int detach_malloc_and_free_id = 1;
-    QDateTime  start_time;
-    QDateTime  end_time;
-    qint64 intervalTimeMS = 0;
-    QString date;
-    QString type;
-    QString malloc_address;
-    int malloc_size;
-    int malloc_parent_id;
-    int exec_count = 0;
-    long sum_malloc_size = 0;
-    long sum_malloc_count = 0;
-    long sum_free_size = 0;
-    long sum_free_count = 0;
-    int start_time_flag = 1;
-    int time_count = 1;
-    int search_flag = 1;
-    int min_search_value = 0;
-    int max_search_value = 2500000;
-    QString excel_postion;
-    int analyse_time_unit = 0;
-    int most_max_size = 0;
-    int most_max_id = 0;
-    QString one_max_time;
-    QString most_max_time;
-    int most_malloc_count = 0;
-    int most_free_count = 0;
+///**************************************************************
+// * Function Name : detach_zero_memory
+// * Description   : Analyze the usage of the first memory
+// * Parameters    : min_size
+// *                 max_size
+// * Returns       : null
+// **************************************************************/
+//void MainWindow::detach_zero_memory(int min_size, int max_size)
+//{
+//    QSqlQuery query;
+//    QSqlQuery query2;
+//    QSqlQuery query3;
+//    QSqlQuery query4;
+//    int min_malloc_size;
+//    int max_malloc_size;
+//    int detach_malloc_and_free_id = 1;
+//    QDateTime  start_time;
+//    QDateTime  end_time;
+//    qint64 intervalTimeMS = 0;
+//    QString date;
+//    QString type;
+//    QString malloc_address;
+//    int malloc_size;
+//    int malloc_parent_id;
+//    int exec_count = 0;
+//    long sum_malloc_size = 0;
+//    long sum_malloc_count = 0;
+//    long sum_free_size = 0;
+//    long sum_free_count = 0;
+//    int start_time_flag = 1;
+//    int time_count = 1;
+//    int search_flag = 1;
+//    int min_search_value = 0;
+//    int max_search_value = 2500000;
+//    QString excel_postion;
+//    int analyse_time_unit = 0;
+//    int most_max_size = 0;
+//    int most_max_id = 0;
+//    QString one_max_time;
+//    QString most_max_time;
+//    int most_malloc_count = 0;
+//    int most_free_count = 0;
 
-    int sum_table_count = 0;
-    int progress_percentage = 0;
-    int detach_count = 0;
+//    int sum_table_count = 0;
+//    int progress_percentage = 0;
+//    int detach_count = 0;
 
-    QString analyse_memory_messages;
+//    QString analyse_memory_messages;
 
-    detach_count = ui->detach_count_Box->currentText().toInt();
+//    detach_count = ui->detach_count_Box->currentText().toInt();
 
-    query4.exec("select malloc_and_free_id from malloc_and_free order by malloc_and_free_id desc");
+//    query4.exec("select malloc_and_free_id from malloc_and_free order by malloc_and_free_id desc");
 
-    if(query4.next())
-    {
-        sum_table_count = query4.value(0).toInt();
-    }
+//    if(query4.next())
+//    {
+//        sum_table_count = query4.value(0).toInt();
+//    }
 
-    qDebug()<< "sum_table_count" << sum_table_count;
+//    qDebug()<< "sum_table_count" << sum_table_count;
 
-    analyse_time_unit = ui->separate_lineEdit->text().toInt();
-    if(analyse_time_unit<=0)
-    {
-        QMessageBox::about(NULL, "提示", "分离时间单位有误");
-        return;
-    }
+//    analyse_time_unit = ui->separate_lineEdit->text().toInt();
+//    if(analyse_time_unit<=0)
+//    {
+//        QMessageBox::about(NULL, "提示", "分离时间单位有误");
+//        return;
+//    }
 
-    min_malloc_size = min_size * 1024;
-    max_malloc_size = max_size * 1024;
+//    min_malloc_size = min_size * 1024;
+//    max_malloc_size = max_size * 1024;
 
-    if(min_malloc_size > max_malloc_size)
-    {
-        QMessageBox::about(NULL, "提示", "最小参数有误");
-        return;
-    }
+//    if(min_malloc_size > max_malloc_size)
+//    {
+//        QMessageBox::about(NULL, "提示", "最小参数有误");
+//        return;
+//    }
 
-    if(min_malloc_size <0 || max_malloc_size < 0)
-    {
-        QMessageBox::about(NULL, "提示", "最大段参数有误");
-        return;
-    }
+//    if(min_malloc_size <0 || max_malloc_size < 0)
+//    {
+//        QMessageBox::about(NULL, "提示", "最大段参数有误");
+//        return;
+//    }
 
-    xlsx.write("A1", "time");
-    xlsx.write("B1", "one_size");
-
-
-    query3.exec("create temporary table one_unfree_memory(detach_malloc_and_free_id int primary key, date varchar, type varchar, malloc_address varchar, malloc_size varchar, parent_id int)");
-
-    while(search_flag)
-    {
-            query.prepare("select * from malloc_and_free where malloc_and_free_id < 50 and malloc_and_free_id < :max_search_value");
-            query.bindValue(":max_search_value", max_search_value);
-            query.exec();
+//    xlsx.write("A1", "time");
+//    xlsx.write("B1", "one_size");
 
 
-        query3.exec("BEGIN");
+//    query3.exec("create temporary table one_unfree_memory(detach_malloc_and_free_id int primary key, date varchar, type varchar, malloc_address varchar, malloc_size varchar, parent_id int)");
 
-        while(query.next())
-        {
-            date = query.value(1).toString();
-            type = query.value(2).toString();
-            malloc_address = query.value(3).toString();
-            malloc_size = query.value(4).toInt();
-            malloc_parent_id = query.value(0).toInt();
+//    while(search_flag)
+//    {
+//            query.prepare("select * from malloc_and_free where malloc_and_free_id < 50 and malloc_and_free_id < :max_search_value");
+//            query.bindValue(":max_search_value", max_search_value);
+//            query.exec();
 
-            if(start_time_flag == 1)
-            {
-                start_time = QDateTime::fromString(date, "yyyy.MM.dd hh:mm:ss.zzz");
-                start_time_flag = 0;
-            }
 
-            end_time = QDateTime::fromString(date, "yyyy.MM.dd hh:mm:ss.zzz");
+//        query3.exec("BEGIN");
 
-            intervalTimeMS = start_time.msecsTo(end_time);
+//        while(query.next())
+//        {
+//            date = query.value(1).toString();
+//            type = query.value(2).toString();
+//            malloc_address = query.value(3).toString();
+//            malloc_size = query.value(4).toInt();
+//            malloc_parent_id = query.value(0).toInt();
 
-            progress_percentage =  double(sum_exec_count + malloc_parent_id)/double(sum_table_count)/double(detach_count)*100;
+//            if(start_time_flag == 1)
+//            {
+//                start_time = QDateTime::fromString(date, "yyyy.MM.dd hh:mm:ss.zzz");
+//                start_time_flag = 0;
+//            }
 
-            ui->progressBar->setValue(progress_percentage);
+//            end_time = QDateTime::fromString(date, "yyyy.MM.dd hh:mm:ss.zzz");
 
-            if(exec_count % 3000 == 0)
-            {
-                query3.exec("COMMIT");
-                query3.exec("BEGIN");
-            }
+//            intervalTimeMS = start_time.msecsTo(end_time);
 
-            exec_count++;
-        }
-        query3.exec("COMMIT");
+//            progress_percentage =  double(sum_exec_count + malloc_parent_id)/double(sum_table_count)/double(detach_count)*100;
 
-        if(exec_count)
-        {
-            exec_count = 0;
-            min_search_value += 2500000;
-            max_search_value += 2500000;
-        }
-        else
-        {
-            search_flag = 0;
-            break;
-        }
-    }
+//            ui->progressBar->setValue(progress_percentage);
 
-    sum_exec_count += malloc_parent_id;
+//            if(exec_count % 3000 == 0)
+//            {
+//                query3.exec("COMMIT");
+//                query3.exec("BEGIN");
+//            }
 
-    qDebug() << "intervalTimeMS/1000/analyse_time_unit" << intervalTimeMS/1000/analyse_time_unit;
-    qDebug() << "time_count" << time_count;
+//            exec_count++;
+//        }
+//        query3.exec("COMMIT");
 
-    if(time_count <= (intervalTimeMS/1000/analyse_time_unit))
-    {
-        while((time_count-1) <= (intervalTimeMS/1000/analyse_time_unit))
-        {
-            excel_postion = QString("B%1").arg(time_count);
-            xlsx.write(excel_postion, 0);
-            time_count++;
-        }
-    }
+//        if(exec_count)
+//        {
+//            exec_count = 0;
+//            min_search_value += 2500000;
+//            max_search_value += 2500000;
+//        }
+//        else
+//        {
+//            search_flag = 0;
+//            break;
+//        }
+//    }
 
-    if(excel_row_count < time_count)
-    {
-        excel_row_count = time_count;
-    }
+//    sum_exec_count += malloc_parent_id;
 
-    analyse_memory_count++;
+//    qDebug() << "intervalTimeMS/1000/analyse_time_unit" << intervalTimeMS/1000/analyse_time_unit;
+//    qDebug() << "time_count" << time_count;
 
-    analyse_memory_messages = "第" + QString::number(analyse_memory_count) + "段内存使用信息";
+//    if(time_count <= (intervalTimeMS/1000/analyse_time_unit))
+//    {
+//        while((time_count-1) <= (intervalTimeMS/1000/analyse_time_unit))
+//        {
+//            excel_postion = QString("B%1").arg(time_count);
+//            xlsx.write(excel_postion, 0);
+//            time_count++;
+//        }
+//    }
 
-    ui->detach_textEdit->append("--------------------------------------------");
-    ui->detach_textEdit->append(analyse_memory_messages);
-    ui->detach_textEdit->append("malloc的次数");
-    ui->detach_textEdit->append(QString::number(sum_malloc_count, 10));
-    ui->detach_textEdit->append("malloc的内存大小");
-    ui->detach_textEdit->append(QString::number(sum_malloc_size, 10));
-    ui->detach_textEdit->append("free的次数");
-    ui->detach_textEdit->append(QString::number(sum_free_count, 10));
-    ui->detach_textEdit->append("free的内存大小");
-    ui->detach_textEdit->append(QString::number(sum_free_size, 10));
+//    if(excel_row_count < time_count)
+//    {
+//        excel_row_count = time_count;
+//    }
 
-    ui->detach_textEdit->append("最大内存占用值");
-    ui->detach_textEdit->append(QString::number(most_max_size, 10));
-    ui->detach_textEdit->append("最大内存占用值时malloc了多少次");
-    ui->detach_textEdit->append(QString::number(most_malloc_count, 10));
-    ui->detach_textEdit->append("最大内存占用值时free了多少次");
-    ui->detach_textEdit->append(QString::number(most_free_count, 10));
-    ui->detach_textEdit->append("在数据库内id号是");
-    ui->detach_textEdit->append(QString::number(most_max_id, 10));
-    ui->detach_textEdit->append("发生时间是");
-    ui->detach_textEdit->append(most_max_time);
+//    analyse_memory_count++;
 
-    ui->detach_textEdit->append("未释放内存");
-    ui->detach_textEdit->append(QString::number(sum_malloc_size-sum_free_size, 10));
-    query3.exec("select * from one_unfree_memory");
-    while(query3.next())
-    {
-        ui->detach_textEdit->append("**********************");
-        detach_malloc_and_free_id = query3.value(0).toInt();
-        date = query3.value(1).toString();
-        type = query3.value(2).toString();
-        malloc_address = query3.value(3).toString();
-        malloc_size = query3.value(4).toInt();
-        malloc_parent_id = query3.value(5).toInt();
+//    analyse_memory_messages = "第" + QString::number(analyse_memory_count) + "段内存使用信息";
 
-        ui->detach_textEdit->append("序号");
-        ui->detach_textEdit->append(QString::number(detach_malloc_and_free_id, 10));
-        ui->detach_textEdit->append("日期");
-        ui->detach_textEdit->append(date);
-        ui->detach_textEdit->append("类型");
-        ui->detach_textEdit->append(type);
-        ui->detach_textEdit->append("malloc地址");
-        ui->detach_textEdit->append(malloc_address);
-        ui->detach_textEdit->append("malloc大小");
-        ui->detach_textEdit->append(QString::number(malloc_size, 10));
-        ui->detach_textEdit->append("源序号");
-        ui->detach_textEdit->append(QString::number(malloc_parent_id, 10));
+//    ui->detach_textEdit->append("--------------------------------------------");
+//    ui->detach_textEdit->append(analyse_memory_messages);
+//    ui->detach_textEdit->append("malloc的次数");
+//    ui->detach_textEdit->append(QString::number(sum_malloc_count, 10));
+//    ui->detach_textEdit->append("malloc的内存大小");
+//    ui->detach_textEdit->append(QString::number(sum_malloc_size, 10));
+//    ui->detach_textEdit->append("free的次数");
+//    ui->detach_textEdit->append(QString::number(sum_free_count, 10));
+//    ui->detach_textEdit->append("free的内存大小");
+//    ui->detach_textEdit->append(QString::number(sum_free_size, 10));
 
-        if(ui->detach_textEdit->document()->lineCount()%100000 == 0)
-        {
-            ui->detach_textEdit->clear();
-        }
-    }
+//    ui->detach_textEdit->append("最大内存占用值");
+//    ui->detach_textEdit->append(QString::number(most_max_size, 10));
+//    ui->detach_textEdit->append("最大内存占用值时malloc了多少次");
+//    ui->detach_textEdit->append(QString::number(most_malloc_count, 10));
+//    ui->detach_textEdit->append("最大内存占用值时free了多少次");
+//    ui->detach_textEdit->append(QString::number(most_free_count, 10));
+//    ui->detach_textEdit->append("在数据库内id号是");
+//    ui->detach_textEdit->append(QString::number(most_max_id, 10));
+//    ui->detach_textEdit->append("发生时间是");
+//    ui->detach_textEdit->append(most_max_time);
 
-}
+//    ui->detach_textEdit->append("未释放内存");
+//    ui->detach_textEdit->append(QString::number(sum_malloc_size-sum_free_size, 10));
+//    query3.exec("select * from one_unfree_memory");
+//    while(query3.next())
+//    {
+//        ui->detach_textEdit->append("**********************");
+//        detach_malloc_and_free_id = query3.value(0).toInt();
+//        date = query3.value(1).toString();
+//        type = query3.value(2).toString();
+//        malloc_address = query3.value(3).toString();
+//        malloc_size = query3.value(4).toInt();
+//        malloc_parent_id = query3.value(5).toInt();
+
+//        ui->detach_textEdit->append("序号");
+//        ui->detach_textEdit->append(QString::number(detach_malloc_and_free_id, 10));
+//        ui->detach_textEdit->append("日期");
+//        ui->detach_textEdit->append(date);
+//        ui->detach_textEdit->append("类型");
+//        ui->detach_textEdit->append(type);
+//        ui->detach_textEdit->append("malloc地址");
+//        ui->detach_textEdit->append(malloc_address);
+//        ui->detach_textEdit->append("malloc大小");
+//        ui->detach_textEdit->append(QString::number(malloc_size, 10));
+//        ui->detach_textEdit->append("源序号");
+//        ui->detach_textEdit->append(QString::number(malloc_parent_id, 10));
+
+//        if(ui->detach_textEdit->document()->lineCount()%100000 == 0)
+//        {
+//            ui->detach_textEdit->clear();
+//        }
+//    }
+
+//}
 
 
 int first_flag = 1;
@@ -629,12 +630,26 @@ void MainWindow::progress_bar_prepartion(void)
     lineSeries_1 = new QLineSeries();
     lineSeries_2 = new QLineSeries();
     lineSeries_3 = new QLineSeries();
+    lineSeries_4 = new QLineSeries();
+    lineSeries_5 = new QLineSeries();
+    lineSeries_6 = new QLineSeries();
+    lineSeries_7 = new QLineSeries();
+    lineSeries_8 = new QLineSeries();
+    lineSeries_9 = new QLineSeries();
+    lineSeries_10 = new QLineSeries();
 
     ui->progressBar->setValue(0);
 
     lineSeries_1->setUseOpenGL(true);
     lineSeries_2->setUseOpenGL(true);
     lineSeries_3->setUseOpenGL(true);
+    lineSeries_4->setUseOpenGL(true);
+    lineSeries_5->setUseOpenGL(true);
+    lineSeries_6->setUseOpenGL(true);
+    lineSeries_7->setUseOpenGL(true);
+    lineSeries_8->setUseOpenGL(true);
+    lineSeries_9->setUseOpenGL(true);
+    lineSeries_10->setUseOpenGL(true);
 
 
     // 构建图表对象
@@ -644,6 +659,13 @@ void MainWindow::progress_bar_prepartion(void)
     m_chart_1->addSeries(lineSeries_1);
     m_chart_1->addSeries(lineSeries_2);
     m_chart_1->addSeries(lineSeries_3);
+    m_chart_1->addSeries(lineSeries_4);
+    m_chart_1->addSeries(lineSeries_5);
+    m_chart_1->addSeries(lineSeries_6);
+    m_chart_1->addSeries(lineSeries_7);
+    m_chart_1->addSeries(lineSeries_8);
+    m_chart_1->addSeries(lineSeries_9);
+    m_chart_1->addSeries(lineSeries_10);
 
     // 设置默认坐标轴
     m_chart_1->createDefaultAxes();
@@ -683,6 +705,8 @@ void MainWindow::progress_bar_prepartion(void)
     QTimer::singleShot(1000,box,SLOT(accept()));//
 
     box->exec();//box->show();都可以
+
+//    Sleep(1000);
 }
 
 
@@ -734,6 +758,7 @@ void MainWindow::detach_one_memory(int min_size, int max_size)
     int sum_table_count = 0;
     int progress_percentage = 0;
     int detach_count = 0;
+    int excel_supplement_flag = 1;
 
 
     QString analyse_memory_messages;
@@ -763,6 +788,8 @@ void MainWindow::detach_one_memory(int min_size, int max_size)
     if(min_malloc_size > max_malloc_size)
     {
         QMessageBox::about(NULL, "提示", "最小参数有误");
+        qDebug()<<"min_malloc_size"<<min_malloc_size;
+        qDebug()<<"max_malloc_size"<<max_malloc_size;
         return;
     }
 
@@ -772,26 +799,70 @@ void MainWindow::detach_one_memory(int min_size, int max_size)
         return;
     }
 
+    qDebug()<<"analyse_memory_count"<<analyse_memory_count;
+
     xlsx.write("A1", "time");
-    xlsx.write("B1", "one_size");
+//    xlsx.write("B1", "one_size");
+//    xlsx.write("C1", "two_size");
+//    xlsx.write("D1", "three_size");
+//    xlsx.write("E1", "four_size");
+//    xlsx.write("F1", "five_size");
+//    xlsx.write("G1", "six_size");
+//    xlsx.write("H1", "seven_size");
+//    xlsx.write("I1", "eight_size");
+//    xlsx.write("J1", "nine_size");
+//    xlsx.write("K1", "ten_size");
+    switch(analyse_memory_count)
+    {
+    case 0:
+        xlsx.write("B1", "one_size");
+        break;
+    case 1:
+        xlsx.write("C1", "two_size");
+        break;
+    case 2:
+        xlsx.write("D1", "three_size");
+        break;
+    case 3:
+        xlsx.write("E1", "four_size");
+        break;
+    case 4:
+        xlsx.write("F1", "five_size");
+        break;
+    case 5:
+        xlsx.write("G1", "six_size");
+        break;
+    case 6:
+        xlsx.write("H1", "seven_size");
+        break;
+    case 7:
+        xlsx.write("I1", "eight_size");
+        break;
+    case 8:
+        xlsx.write("J1", "nine_size");
+        break;
+    case 9:
+        xlsx.write("K1", "ten_size");
+        break;
+    }
 
 
     query3.exec("create temporary table one_unfree_memory(detach_malloc_and_free_id int primary key, date varchar, type varchar, malloc_address varchar, malloc_size varchar, parent_id int)");
 
     while(search_flag)
     {
-        query.prepare("select * from malloc_and_free where malloc_and_free_id >= :min_search_value and malloc_and_free_id < :max_search_value and ((malloc_size >= :min_malloc_size and malloc_size < :max_malloc_size) or type = 'free')");
-        query.bindValue(":min_search_value", min_search_value);
-        query.bindValue(":max_search_value", max_search_value);
-        query.bindValue(":min_malloc_size", min_malloc_size);
-        query.bindValue(":max_malloc_size", max_malloc_size);
-        query.exec();
-
-
-//        query.prepare("select * from malloc_and_free where malloc_and_free_id >= :min_search_value and malloc_and_free_id < :max_search_value");
+//        query.prepare("select * from malloc_and_free where malloc_and_free_id >= :min_search_value and malloc_and_free_id < :max_search_value and ((malloc_size >= :min_malloc_size and malloc_size < :max_malloc_size) or type = 'free')");
 //        query.bindValue(":min_search_value", min_search_value);
 //        query.bindValue(":max_search_value", max_search_value);
+//        query.bindValue(":min_malloc_size", min_malloc_size);
+//        query.bindValue(":max_malloc_size", max_malloc_size);
 //        query.exec();
+
+
+        query.prepare("select * from malloc_and_free where malloc_and_free_id >= :min_search_value and malloc_and_free_id < :max_search_value");
+        query.bindValue(":min_search_value", min_search_value);
+        query.bindValue(":max_search_value", max_search_value);
+        query.exec();
 
         query3.exec("BEGIN");
 
@@ -817,10 +888,12 @@ void MainWindow::detach_one_memory(int min_size, int max_size)
 
             ui->progressBar->setValue(progress_percentage);
 
+            one_max_size = (sum_malloc_size-sum_free_size);
+
             if(type == "malloc")
             {
-//                if(malloc_size>=min_malloc_size && malloc_size<max_malloc_size)
-//                {
+                if(malloc_size>=min_malloc_size && malloc_size<max_malloc_size)
+                {
                     query3.prepare("insert into one_unfree_memory values(:detach_malloc_and_free_id, '"+date+"', '"+type+"', '"+malloc_address+"', :malloc_size, :parent_id)");
                     query3.bindValue(":detach_malloc_and_free_id", detach_malloc_and_free_id);
                     query3.bindValue(":malloc_size", malloc_size);
@@ -849,38 +922,89 @@ void MainWindow::detach_one_memory(int min_size, int max_size)
 
                     if(intervalTimeMS>time_count*analyse_time_unit*1000)
                     {
+                        excel_supplement_flag = 0;
+
                         switch(analyse_memory_count)
                         {
                         case 0:
+                            excel_postion = QString("B%1").arg(time_count+1);
+                            xlsx.write(excel_postion, one_max_size);
+
                             lineSeries_1->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
                             break;
                         case 1:
+                            excel_postion = QString("C%1").arg(time_count+1);
+                            xlsx.write(excel_postion, one_max_size);
+
                             lineSeries_2->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
                             break;
                         case 2:
+                            excel_postion = QString("D%1").arg(time_count+1);
+                            xlsx.write(excel_postion, one_max_size);
+
                             lineSeries_3->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                            break;
+
+                        case 3:
+                            excel_postion = QString("E%1").arg(time_count+1);
+                            xlsx.write(excel_postion, one_max_size);
+
+                            lineSeries_4->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                            break;
+                        case 4:
+                            excel_postion = QString("F%1").arg(time_count+1);
+                            xlsx.write(excel_postion, one_max_size);
+
+                            lineSeries_5->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                            break;
+                        case 5:
+                            excel_postion = QString("G%1").arg(time_count+1);
+                            xlsx.write(excel_postion, one_max_size);
+
+                            lineSeries_6->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                            break;
+
+                        case 6:
+                            excel_postion = QString("H%1").arg(time_count+1);
+                            xlsx.write(excel_postion, one_max_size);
+
+                            lineSeries_7->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                            break;
+                        case 7:
+                            excel_postion = QString("I%1").arg(time_count+1);
+                            xlsx.write(excel_postion, one_max_size);
+
+                            lineSeries_8->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                            break;
+                        case 8:
+                            excel_postion = QString("J%1").arg(time_count+1);
+                            xlsx.write(excel_postion, one_max_size);
+
+                            lineSeries_9->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                            break;
+
+                        case 9:
+                            excel_postion = QString("K%1").arg(time_count+1);
+                            xlsx.write(excel_postion, one_max_size);
+
+                            lineSeries_10->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
                             break;
                         }
 
-                        excel_postion = QString("A%1").arg(time_count+1);
-                        xlsx.write(excel_postion, time_count);
-
-                        excel_postion = QString("B%1").arg(time_count+1);
-                        xlsx.write(excel_postion, one_max_size);
 
                         one_max_size = 0;
-                        time_count++;
+
                     }
 
                     detach_malloc_and_free_id++;
                     sum_malloc_count++;
 
 
-                    if(sum_malloc_count%10000 == 0)
-                    {
-                        qDebug()<< "sum_malloc_count" <<  sum_malloc_count;
-                    }
-//                }
+//                    if(sum_malloc_count%10000 == 0)
+//                    {
+//                        qDebug()<< "sum_malloc_count" <<  sum_malloc_count;
+//                    }
+                }
             }
 
 
@@ -912,27 +1036,77 @@ void MainWindow::detach_one_memory(int min_size, int max_size)
 
                     if(intervalTimeMS>time_count*analyse_time_unit*1000)
                     {
+                        excel_supplement_flag = 0;
+
                         switch(analyse_memory_count)
                         {
                         case 0:
+                            excel_postion = QString("B%1").arg(time_count+1);
+                            xlsx.write(excel_postion, one_max_size);
+
                             lineSeries_1->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
                             break;
                         case 1:
+                            excel_postion = QString("C%1").arg(time_count+1);
+                            xlsx.write(excel_postion, one_max_size);
+
                             lineSeries_2->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
                             break;
                         case 2:
+                            excel_postion = QString("D%1").arg(time_count+1);
+                            xlsx.write(excel_postion, one_max_size);
+
                             lineSeries_3->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                            break;
+
+                        case 3:
+                            excel_postion = QString("E%1").arg(time_count+1);
+                            xlsx.write(excel_postion, one_max_size);
+
+                            lineSeries_4->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                            break;
+                        case 4:
+                            excel_postion = QString("F%1").arg(time_count+1);
+                            xlsx.write(excel_postion, one_max_size);
+
+                            lineSeries_5->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                            break;
+                        case 5:
+                            excel_postion = QString("G%1").arg(time_count+1);
+                            xlsx.write(excel_postion, one_max_size);
+
+                            lineSeries_6->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                            break;
+
+                        case 6:
+                            excel_postion = QString("H%1").arg(time_count+1);
+                            xlsx.write(excel_postion, one_max_size);
+
+                            lineSeries_7->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                            break;
+                        case 7:
+                            excel_postion = QString("I%1").arg(time_count+1);
+                            xlsx.write(excel_postion, one_max_size);
+
+                            lineSeries_8->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                            break;
+                        case 8:
+                            excel_postion = QString("J%1").arg(time_count+1);
+                            xlsx.write(excel_postion, one_max_size);
+
+                            lineSeries_9->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                            break;
+
+                        case 9:
+                            excel_postion = QString("K%1").arg(time_count+1);
+                            xlsx.write(excel_postion, one_max_size);
+
+                            lineSeries_10->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
                             break;
                         }
 
-                        excel_postion = QString("A%1").arg(time_count+1);
-                        xlsx.write(excel_postion, time_count);
-
-                        excel_postion = QString("B%1").arg(time_count+1);
-                        xlsx.write(excel_postion, one_max_size);
-
                         one_max_size = 0;
-                        time_count++;
+
                     }
 
                     detach_malloc_and_free_id++;
@@ -942,13 +1116,97 @@ void MainWindow::detach_one_memory(int min_size, int max_size)
                     query3.bindValue(":delete_id", query2.value(0).toInt());
                     query3.exec();
 
-                    if(sum_free_count%10000 == 0)
-                    {
-                        qDebug()<< "sum_free_count" <<  sum_free_count;
+//                    if(sum_free_count%10000 == 0)
+//                    {
+//                        qDebug()<< "sum_free_count" <<  sum_free_count;
 
-                    }
+//                    }
 
                 }
+            }
+
+
+            if(intervalTimeMS>time_count*analyse_time_unit*1000)
+            {
+                excel_postion = QString("A%1").arg(time_count+1);
+                xlsx.write(excel_postion, time_count);
+
+                if(excel_supplement_flag == 1)
+                {
+                switch(analyse_memory_count)
+                {
+                case 0:
+                    excel_postion = QString("B%1").arg(time_count+1);
+                    xlsx.write(excel_postion, one_max_size);
+
+                    lineSeries_1->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                    break;
+                case 1:
+                    excel_postion = QString("C%1").arg(time_count+1);
+                    xlsx.write(excel_postion, one_max_size);
+
+                    lineSeries_2->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                    break;
+                case 2:
+                    excel_postion = QString("D%1").arg(time_count+1);
+                    xlsx.write(excel_postion, one_max_size);
+
+                    lineSeries_3->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                    break;
+
+                case 3:
+                    excel_postion = QString("E%1").arg(time_count+1);
+                    xlsx.write(excel_postion, one_max_size);
+
+                    lineSeries_4->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                    break;
+                case 4:
+                    excel_postion = QString("F%1").arg(time_count+1);
+                    xlsx.write(excel_postion, one_max_size);
+
+                    lineSeries_5->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                    break;
+                case 5:
+                    excel_postion = QString("G%1").arg(time_count+1);
+                    xlsx.write(excel_postion, one_max_size);
+
+                    lineSeries_6->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                    break;
+
+                case 6:
+                    excel_postion = QString("H%1").arg(time_count+1);
+                    xlsx.write(excel_postion, one_max_size);
+
+                    lineSeries_7->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                    break;
+                case 7:
+                    excel_postion = QString("I%1").arg(time_count+1);
+                    xlsx.write(excel_postion, one_max_size);
+
+                    lineSeries_8->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                    break;
+                case 8:
+                    excel_postion = QString("J%1").arg(time_count+1);
+                    xlsx.write(excel_postion, one_max_size);
+
+                    lineSeries_9->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                    break;
+
+                case 9:
+                    excel_postion = QString("K%1").arg(time_count+1);
+                    xlsx.write(excel_postion, one_max_size);
+
+                    lineSeries_10->append(intervalTimeMS/1000/analyse_time_unit, one_max_size);
+                    break;
+                }
+                }
+                else
+                {
+                    one_max_size = 0;
+                    excel_supplement_flag = 1;
+                }
+
+                time_count++;
             }
 
             if(exec_count % 3000 == 0)
@@ -983,10 +1241,56 @@ void MainWindow::detach_one_memory(int min_size, int max_size)
     {
         while((time_count-1) <= (intervalTimeMS/1000/analyse_time_unit))
         {
-            excel_postion = QString("B%1").arg(time_count);
-            xlsx.write(excel_postion, 0);
+            if((time_count-1) != 0)
+            {
+                switch(analyse_memory_count)
+                {
+                case 0:
+                    excel_postion = QString("B%1").arg(time_count);
+                    xlsx.write(excel_postion, 0);
+                    break;
+                case 1:
+                    excel_postion = QString("C%1").arg(time_count);
+                    xlsx.write(excel_postion, 0);
+                    break;
+                case 2:
+                    excel_postion = QString("D%1").arg(time_count);
+                    xlsx.write(excel_postion, 0);
+                    break;
+                case 3:
+                    excel_postion = QString("E%1").arg(time_count);
+                    xlsx.write(excel_postion, 0);
+                    break;
+                case 4:
+                    excel_postion = QString("F%1").arg(time_count);
+                    xlsx.write(excel_postion, 0);
+                    break;
+                case 5:
+                    excel_postion = QString("G%1").arg(time_count);
+                    xlsx.write(excel_postion, 0);
+                    break;
+                case 6:
+                    excel_postion = QString("H%1").arg(time_count);
+                    xlsx.write(excel_postion, 0);
+                    break;
+                case 7:
+                    excel_postion = QString("I%1").arg(time_count);
+                    xlsx.write(excel_postion, 0);
+                    break;
+                case 8:
+                    excel_postion = QString("J%1").arg(time_count);
+                    xlsx.write(excel_postion, 0);
+                    break;
+                case 9:
+                    excel_postion = QString("K%1").arg(time_count);
+                    xlsx.write(excel_postion, 0);
+                    break;
+                }
+            }
+
             time_count++;
         }
+
     }
 
     if(excel_row_count < time_count)
@@ -1975,6 +2279,13 @@ void MainWindow::on_detachButton_clicked()
     lineSeries_1 = new QLineSeries();
     lineSeries_2 = new QLineSeries();
     lineSeries_3 = new QLineSeries();
+    lineSeries_4 = new QLineSeries();
+    lineSeries_5 = new QLineSeries();
+    lineSeries_6 = new QLineSeries();
+    lineSeries_7 = new QLineSeries();
+    lineSeries_8 = new QLineSeries();
+    lineSeries_9 = new QLineSeries();
+    lineSeries_10 = new QLineSeries();
 
 
     if(detach_count>=1)
@@ -2083,10 +2394,6 @@ void MainWindow::on_detachButton_clicked()
 
     ui->progressBar->setValue(100);
 
-    analyse_memory_count = 0;
-    sum_exec_count = 0;
-    detach_count = 0;
-
 
 
 
@@ -2126,15 +2433,30 @@ void MainWindow::on_detachButton_clicked()
     lineSeries_1->setUseOpenGL(true);
     lineSeries_2->setUseOpenGL(true);
     lineSeries_3->setUseOpenGL(true);
+    lineSeries_4->setUseOpenGL(true);
+    lineSeries_5->setUseOpenGL(true);
+    lineSeries_6->setUseOpenGL(true);
+    lineSeries_7->setUseOpenGL(true);
+    lineSeries_8->setUseOpenGL(true);
+    lineSeries_9->setUseOpenGL(true);
+    lineSeries_10->setUseOpenGL(true);
+
 
     qDebug()<<"lineSeries_1->count()" <<lineSeries_1->count();
     qDebug()<<"lineSeries_2->count()" <<lineSeries_2->count();
     qDebug()<<"lineSeries_3->count()" <<lineSeries_3->count();
+    qDebug()<<"lineSeries_4->count()" <<lineSeries_4->count();
+    qDebug()<<"lineSeries_5->count()" <<lineSeries_5->count();
+    qDebug()<<"lineSeries_6->count()" <<lineSeries_6->count();
+    qDebug()<<"lineSeries_7->count()" <<lineSeries_7->count();
+    qDebug()<<"lineSeries_8->count()" <<lineSeries_8->count();
+    qDebug()<<"lineSeries_9->count()" <<lineSeries_9->count();
+    qDebug()<<"lineSeries_10->count()" <<lineSeries_10->count();
 
-    if(lineSeries_1->count() == 0 && lineSeries_2->count() == 0 && lineSeries_3->count() == 0)
-    {
-        QMessageBox::about(NULL, "提示", "有内存未找到");//
-    }
+//    if(lineSeries_1->count() == 0 && lineSeries_2->count() == 0 && lineSeries_3->count() == 0)
+//    {
+//        QMessageBox::about(NULL, "提示", "有内存未找到");//
+//    }
 
     // 构建图表对象
     m_chart_1 = new QChart();
@@ -2143,16 +2465,70 @@ void MainWindow::on_detachButton_clicked()
     m_chart_1->addSeries(lineSeries_1);
     m_chart_1->addSeries(lineSeries_2);
     m_chart_1->addSeries(lineSeries_3);
+    m_chart_1->addSeries(lineSeries_4);
+    m_chart_1->addSeries(lineSeries_5);
+    m_chart_1->addSeries(lineSeries_6);
+    m_chart_1->addSeries(lineSeries_7);
+    m_chart_1->addSeries(lineSeries_8);
+    m_chart_1->addSeries(lineSeries_9);
+    m_chart_1->addSeries(lineSeries_10);
 
     // 设置默认坐标轴
     m_chart_1->createDefaultAxes();
 
 
-    // 隐藏系列
-    //    m_chart_1->legend()->hide();
-    //    m_chart_2->legend()->hide();
-    //    m_chart_3->legend()->hide();
+    //     隐藏系列
+    lineSeries_1->hide();
+    lineSeries_2->hide();
+    lineSeries_3->hide();
+    lineSeries_4->hide();
+    lineSeries_5->hide();
+    lineSeries_6->hide();
+    lineSeries_7->hide();
+    lineSeries_8->hide();
+    lineSeries_9->hide();
+    lineSeries_10->hide();
 
+    if(analyse_memory_count>0)
+    {
+        lineSeries_1->show();
+    }
+    if(analyse_memory_count>1)
+    {
+        lineSeries_2->show();
+    }
+    if(analyse_memory_count>2)
+    {
+        lineSeries_3->show();
+    }
+    if(analyse_memory_count>3)
+    {
+        lineSeries_4->show();
+    }
+    if(analyse_memory_count>4)
+    {
+        lineSeries_5->show();
+    }
+    if(analyse_memory_count>5)
+    {
+        lineSeries_6->show();
+    }
+    if(analyse_memory_count>6)
+    {
+        lineSeries_7->show();
+    }
+    if(analyse_memory_count>7)
+    {
+        lineSeries_8->show();
+    }
+    if(analyse_memory_count>8)
+    {
+        lineSeries_9->show();
+    }
+    if(analyse_memory_count>9)
+    {
+        lineSeries_10->show();
+    }
 
     // 设置主题
     m_chart_1->setTheme(QtCharts::QChart::ChartThemeBlueCerulean);
@@ -2195,6 +2571,12 @@ void MainWindow::on_detachButton_clicked()
 
     //    // 设置动画
     //    ui->one_widget->setRenderHint(QPainter::Antialiasing, true);
+
+    analyse_memory_count = 0;
+    sum_exec_count = 0;
+    detach_count = 0;
+
+
 
     QMessageBox::about(NULL, "提示", "数据分析完成");//
 }
@@ -2325,15 +2707,43 @@ void MainWindow::change_style() {
     {
         QPen pn1(Qt::green, 1.f);
         lineSeries_1->setPen(pn1);
-        lineSeries_1->setName("one line");
+        lineSeries_1->setName("line_1");
 
         QPen pn2(Qt::black, 1.f);
         lineSeries_2->setPen(pn2);
-        lineSeries_2->setName("two line");
+        lineSeries_2->setName("line_2");
 
         QPen pn3(Qt::red, 1.f);
         lineSeries_3->setPen(pn3);
-        lineSeries_3->setName("three line");
+        lineSeries_3->setName("line_3");
+
+        QPen pn4(Qt::yellow, 1.f);
+        lineSeries_4->setPen(pn4);
+        lineSeries_4->setName("line_4");
+
+        QPen pn5(Qt::blue, 1.f);
+        lineSeries_5->setPen(pn5);
+        lineSeries_5->setName("line_5");
+
+        QPen pn6(Qt::darkRed, 1.f);
+        lineSeries_6->setPen(pn6);
+        lineSeries_6->setName("line_6");
+
+        QPen pn7(Qt::darkBlue, 1.f);
+        lineSeries_7->setPen(pn7);
+        lineSeries_7->setName("line_7");
+
+        QPen pn8(Qt::darkYellow, 1.f);
+        lineSeries_8->setPen(pn8);
+        lineSeries_8->setName("line_8");
+
+        QPen pn9(Qt::darkGreen, 1.f);
+        lineSeries_9->setPen(pn9);
+        lineSeries_9->setName("line_9");
+
+        QPen pn10(Qt::cyan, 1.f);
+        lineSeries_10->setPen(pn10);
+        lineSeries_10->setName("line_10");
     }
 
     //    // 设置动画
