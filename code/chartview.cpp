@@ -1,5 +1,7 @@
 #include "chartview.h"
 
+#include <QValueAxis>
+
 /**************************************************************
  * Function Name : ChartView
  * Description   : Construct function ChartView
@@ -27,7 +29,25 @@ void ChartView::mousePressEvent(QMouseEvent *event)
     if (event->button() & Qt::LeftButton) {
         isClicking = true;
     } else if (event->button() & Qt::RightButton) {
+        chart()->createDefaultAxes();
         chart()->zoomReset();
+
+        QValueAxis *axisX = dynamic_cast<QValueAxis*>(chart()->axisX());//
+
+        QValueAxis *One_axisX = new QValueAxis();
+
+
+        One_axisX->setLabelFormat("%#X");
+
+        One_axisX->setMin(axisX->min());
+
+        One_axisX->setMax(axisX->max());
+
+        chart()->setAxisX(One_axisX);
+
+        chart()->axisY()->setVisible(false);
+
+        chart()->update();
     }
 
     QChartView::mousePressEvent(event);
@@ -44,17 +64,37 @@ void ChartView::mouseMoveEvent(QMouseEvent *event)
 {
     int x, y;
 
+//    chart()->createDefaultAxes();
+
     if (isClicking) {
         if (xOld == 0 && yOld == 0) {
 
         } else {
+            chart()->createDefaultAxes();
+
             x = event->x() - xOld;
-            y = event->y() - yOld;
-            chart()->scroll(-x, y);
+            chart()->scroll(-x, 0);
+
+            QValueAxis *axisX = dynamic_cast<QValueAxis*>(chart()->axisX());//
+
+            QValueAxis *One_axisX = new QValueAxis();
+
+
+            One_axisX->setLabelFormat("%#X");
+
+            One_axisX->setMin(axisX->min());
+
+            One_axisX->setMax(axisX->max());
+
+            chart()->setAxisX(One_axisX);
+
+            chart()->axisY()->setVisible(false);
+
         }
 
         xOld = event->x();
-        yOld = event->y();
+
+        chart()->update();
 
         return;
     }
@@ -93,15 +133,19 @@ void ChartView::keyPressEvent(QKeyEvent *event)
     switch (event->key()) {
     case Qt::Key_Left:
         chart()->scroll(-10, 0);
+        chart()->update();
         break;
     case Qt::Key_Right:
         chart()->scroll(10, 0);
+        chart()->update();
         break;
     case Qt::Key_Up:
         chart()->scroll(0, 10);
+        chart()->update();
         break;
     case Qt::Key_Down:
         chart()->scroll(0, -10);
+        chart()->update();
         break;
     default:
         keyPressEvent(event);

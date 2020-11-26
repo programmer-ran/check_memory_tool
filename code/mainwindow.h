@@ -76,14 +76,6 @@ private slots:
     //保存内存分析结果响应槽函数
     void on_saveButton_clicked();
 
-    //设置整体显示效果响函数
-    void change_style();
-
-    //边框设置函数
-    void setMainWindowPalette();
-
-    //图片保存为svg格式函数
-    void SaveChartViewSvg();
 
 private:
 
@@ -93,20 +85,47 @@ private:
     QSerialPort serial;
     ChartView *chartView;
     QChart* m_chart_1;// 图表对象
-    QLineSeries* lineSeries_1;// 系列一
-    QLineSeries* lineSeries_2;// 系列二
-    QLineSeries* lineSeries_3;// 系列三
-    QLineSeries* lineSeries_4;// 系列一
-    QLineSeries* lineSeries_5;// 系列二
-    QLineSeries* lineSeries_6;// 系列三
-    QLineSeries* lineSeries_7;// 系列一
-    QLineSeries* lineSeries_8;// 系列二
-    QLineSeries* lineSeries_9;// 系列三
-    QLineSeries* lineSeries_10;// 系列三
+
+    QLineSeries* series0 = NULL;
+    QLineSeries* series1 = NULL;
+
+    QLineSeries* series2 = NULL;
+    QLineSeries* series3 = NULL;
+
+    QLineSeries* series4 = NULL;
+    QLineSeries* series5 = NULL;
+
+
+    QLineSeries* series6 = NULL;
+    QLineSeries* series7 = NULL;
+
+    QLineSeries* series8 = NULL;
+    QLineSeries* series9 = NULL;
+
+    QLineSeries* series10 = NULL;
+    QLineSeries* series11 = NULL;
+
+    QLineSeries* series12 = NULL;
+    QLineSeries* series13 = NULL;
+
+    QLineSeries* series14 = NULL;
+    QLineSeries* series15 = NULL;
+
+    QLineSeries* series16 = NULL;
+    QLineSeries* series17 = NULL;
+
+    QLineSeries* series18 = NULL;
+    QLineSeries* series19 = NULL;
+
+    QLineSeries* series20 = NULL;
+    QLineSeries* series21 = NULL;
 
     QXlsx::Document xlsx;
 
     bool isStopping;
+
+
+
 };
 
 #endif // MAINWINDOW_H

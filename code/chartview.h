@@ -32,4 +32,7 @@ private:
     int yOld;
 };
 
+
+
+
 #endif /* __CHARTVIEW_H__ */

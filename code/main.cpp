@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 
     QSqlQuery query;
     query.exec("PRAGMA synchronous = OFF");
-    query.exec("create table malloc_and_free(malloc_and_free_id int primary key, date varchar, type varchar, malloc_address varchar, malloc_size int)");
+    query.exec("create table malloc_and_free(id int primary key, date varchar, type varchar, malloc_address varchar, malloc_size int,  start_and_end_address varchar)");
 
     MainWindow w;
     w.show();
