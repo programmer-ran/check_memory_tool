@@ -1,6 +1,6 @@
 #-------------------------------------------------
 #
-# Project created by QtCreator 2018-12-13T19:49:36
+# Project finished by QtCreator 2020-11-31
 #
 #-------------------------------------------------
 
@@ -31,13 +31,11 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         chartview.cpp \
         main.cpp \
-        mainwindow.cpp \
-        mythread.cpp
+        mainwindow.cpp
 
 HEADERS += \
         chartview.h \
-        mainwindow.h \
-        mythread.h
+        mainwindow.h
 
 FORMS += \
     mainwindow.ui

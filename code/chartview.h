@@ -1,3 +1,11 @@
+/***************************************************************
+* Filename     : chartview.h
+* Description   : Rewrite Qchartview class, add scroll wheel
+*                 and mouse to control zoom memory chart events
+* Version      : 1.0
+* History       :
+* penghongran 2020-11-30  finished
+**************************************************************/
 #ifndef __CHARTVIEW_H__
 #define __CHARTVIEW_H__
 
@@ -13,26 +21,23 @@ public:
 
 protected:
 
-    //创建键盘控制波形图事件
-    void keyPressEvent(QKeyEvent *event);
-
-    //创建鼠标点击控制波形图事件
+    //Create mouse click control waveform events
     void mousePressEvent(QMouseEvent *event);
 
-    //创建键盘移动控制波形图事件
+    //Create keyboard movement control waveform events
     void mouseMoveEvent(QMouseEvent *event);
 
-    //创建键盘右键恢复波形图事件
+    //Create keyboard right click to restore waveform events
     void mouseReleaseEvent(QMouseEvent *event);
 
+    //Memory pool zoom operation function
+    void wheelEvent(QWheelEvent *event);
+
 private:
-    bool isClicking;
 
-    int xOld;
-    int yOld;
+    bool is_clicking;
+    int old_x;
 };
-
-
 
 
 #endif /* __CHARTVIEW_H__ */

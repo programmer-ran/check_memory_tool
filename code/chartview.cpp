@@ -1,3 +1,11 @@
+/***************************************************************
+* Filename     : chartview.cpp
+* Description   : Rewrite Qchartview class, add scroll wheel
+*                 and mouse to control zoom memory chart events
+* Version      : 1.0
+* History       :
+* penghongran 2020-11-30  finished
+**************************************************************/
 #include "chartview.h"
 
 #include <QValueAxis>
@@ -11,88 +19,74 @@
  **************************************************************/
 ChartView::ChartView(QChart *chart, QWidget *parent) :
     QChartView(chart, parent),
-    isClicking(false),
-    xOld(0), yOld(0)
+    is_clicking(false),
+    old_x(0)
 {
     setRubberBand(QChartView::RectangleRubberBand);
 }
 
-
 /**************************************************************
  * Function Name : mousePressEvent
  * Description   : Create mouse click control waveform events
- * Parameters    : event
+ * Parameters    : event -- operate object
  * Returns       : null
  **************************************************************/
 void ChartView::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() & Qt::LeftButton) {
-        isClicking = true;
+        is_clicking = true;
     } else if (event->button() & Qt::RightButton) {
         chart()->createDefaultAxes();
         chart()->zoomReset();
 
-        QValueAxis *axisX = dynamic_cast<QValueAxis*>(chart()->axisX());//
+        //Sixteenth transformation of coordinates
+        QValueAxis *template_axisX = dynamic_cast<QValueAxis*>(chart()->axisX());//
+        QValueAxis *hex_axisX = new QValueAxis();
 
-        QValueAxis *One_axisX = new QValueAxis();
+        hex_axisX->setLabelFormat("%#X");
+        hex_axisX->setMin(template_axisX->min());
+        hex_axisX->setMax(template_axisX->max());
 
-
-        One_axisX->setLabelFormat("%#X");
-
-        One_axisX->setMin(axisX->min());
-
-        One_axisX->setMax(axisX->max());
-
-        chart()->setAxisX(One_axisX);
-
+        chart()->setAxisX(hex_axisX);
         chart()->axisY()->setVisible(false);
-
         chart()->update();
     }
 
     QChartView::mousePressEvent(event);
 }
 
-
 /**************************************************************
  * Function Name : mouseMoveEvent
  * Description   : Create keyboard movement control waveform events
- * Parameters    : event
+ * Parameters    : event -- operate object
  * Returns       : null
  **************************************************************/
 void ChartView::mouseMoveEvent(QMouseEvent *event)
 {
-    int x, y;
+    int x = 0;
 
-//    chart()->createDefaultAxes();
-
-    if (isClicking) {
-        if (xOld == 0 && yOld == 0) {
+    if (is_clicking) {
+        if (old_x == 0) {
 
         } else {
             chart()->createDefaultAxes();
 
-            x = event->x() - xOld;
+            x = event->x() - old_x;
             chart()->scroll(-x, 0);
 
-            QValueAxis *axisX = dynamic_cast<QValueAxis*>(chart()->axisX());//
+            //Sixteenth transformation of coordinates
+            QValueAxis *template_axisX = dynamic_cast<QValueAxis*>(chart()->axisX());//
+            QValueAxis *hex_axisX = new QValueAxis();
 
-            QValueAxis *One_axisX = new QValueAxis();
+            hex_axisX->setLabelFormat("%#X");
+            hex_axisX->setMin(template_axisX->min());
+            hex_axisX->setMax(template_axisX->max());
 
-
-            One_axisX->setLabelFormat("%#X");
-
-            One_axisX->setMin(axisX->min());
-
-            One_axisX->setMax(axisX->max());
-
-            chart()->setAxisX(One_axisX);
-
+            chart()->setAxisX(hex_axisX);
             chart()->axisY()->setVisible(false);
-
         }
 
-        xOld = event->x();
+        old_x = event->x();
 
         chart()->update();
 
@@ -105,14 +99,14 @@ void ChartView::mouseMoveEvent(QMouseEvent *event)
 /**************************************************************
  * Function Name : mouseReleaseEvent
  * Description   : Create keyboard right click to restore waveform event
- * Parameters    : event
+ * Parameters    : event -- operate object
  * Returns       : null
  **************************************************************/
 void ChartView::mouseReleaseEvent(QMouseEvent *event)
 {
-    if (isClicking) {
-        xOld = yOld = 0;
-        isClicking = false;
+    if (is_clicking) {
+        old_x = 0;
+        is_clicking = false;
     }
 
     /* Disable original right click event */
@@ -123,32 +117,55 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event)
 
 
 /**************************************************************
- * Function Name : keyPressEvent
- * Description   : Create keyboard control waveform events
+ * Function Name : wheelEvent
+ * Description   : Zoom in and out of the waveform
  * Parameters    : event
  * Returns       : null
  **************************************************************/
-void ChartView::keyPressEvent(QKeyEvent *event)
+void ChartView::wheelEvent(QWheelEvent *event)
 {
-    switch (event->key()) {
-    case Qt::Key_Left:
-        chart()->scroll(-10, 0);
-        chart()->update();
-        break;
-    case Qt::Key_Right:
-        chart()->scroll(10, 0);
-        chart()->update();
-        break;
-    case Qt::Key_Up:
-        chart()->scroll(0, 10);
-        chart()->update();
-        break;
-    case Qt::Key_Down:
-        chart()->scroll(0, -10);
-        chart()->update();
-        break;
-    default:
-        keyPressEvent(event);
-        break;
+    //Scaling factor
+    double factor = 0.0;
+
+    if (event->delta() > 0)
+    {
+        factor = 1.1;
     }
+    else
+    {
+        factor = double(10.0/11);
+    }
+
+    chart()->createDefaultAxes();
+
+    //The current position of the mouse
+    QPointF mousePos = mapFromGlobal(QCursor::pos());
+
+    QRectF rect;
+
+    rect.setLeft(chart()->plotArea().left());
+    rect.setTop(chart()->plotArea().top());
+    rect.setWidth(chart()->plotArea().width()/factor);
+    rect.setHeight(chart()->plotArea().height());
+
+    mousePos.setX(chart()->plotArea().center().x());
+    mousePos.setY(rect.y());
+    rect.moveCenter(mousePos);
+    chart()->zoomIn(rect);
+
+    //Sixteenth transformation of coordinates
+    QValueAxis *template_axisX = dynamic_cast<QValueAxis*>(chart()->axisX());//
+
+    QValueAxis *hex_axisX = new QValueAxis();
+
+    hex_axisX->setLabelFormat("%#X");
+    hex_axisX->setMin(template_axisX->min());
+    hex_axisX->setMax(template_axisX->max());
+
+    chart()->setAxisX(hex_axisX);
+    chart()->axisY()->setVisible(false);
+    chart()->update();
+
+    //Recursive call
+    QWidget::wheelEvent(event);
 }

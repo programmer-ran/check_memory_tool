@@ -1,3 +1,10 @@
+/***************************************************************
+* Filename     : mainwindow.h
+* Description   : Add UI and functions to application window objects
+* Version      : 1.0
+* History       :
+* penghongran 2020-11-30  finished
+**************************************************************/
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
@@ -10,9 +17,7 @@
 
 #include "chartview.h"
 
-
 QT_CHARTS_USE_NAMESPACE
-
 
 namespace Ui {
 class MainWindow;
@@ -26,105 +31,139 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-    //接收串口数据进行解析函数
-    void data_get();
+    //Receive serial port data for analysis function
+    void analyse_receive_window_data();
 
-    //分离出第零段内存信息
-    void detach_zero_memory(int min_size, int max_size);
-
-    //进度条前置准备
+    //prepare for progress_bar_prepartion
     void progress_bar_prepartion();
 
-    //分离出第一段内存信息
-    void detach_one_memory(int min_size, int max_size);
+    //set excel column name
+    void set_excel_column_name(int excel_column_count);
 
-    //分离出第二段内存信息
-    void detach_two_memory();
+    //set excel column value
+    void set_excel_value(int time_count, uint second_max_size);
 
-    //分离出第三段内存信息
-    void detach_three_memory();
-
-    //外部函数调用内部成员构造
-    static MainWindow* getInstance();
+    //Separate memory information from the database
+    void detach_one_memory(uint min_malloc_size, uint max_malloc_size);
 
 private slots:
 
-    //串口接收数据信号响应槽函数
+    //Serial port receiving data signal response slot function
     void serialPort_readyRead();
 
-    //检测可用串口数
+    //Check the number of available serial ports
     void on_searchButton_clicked();
 
-    //打开串口响应槽函数
+    //Open serial port response slot function
     void on_openButton_clicked();
 
-    //清除分离结果槽函数
+    //Clear separation result slot function
     void on_clearButton_clicked();
 
-    //进行内存malloc和free分离响应槽函数
-    void on_analyseButton_clicked();
+//    //Separate memory malloc and free response slot functions
+//    void on_analyseButton_clicked();
 
-    //停止线程响应槽函数
-    void stopThread();
-
-    //进行分段内存分析响应槽函数
+    //Perform segmented memory analysis response slot function
     void on_detachButton_clicked();
 
-    //设置默认参数
+    //According to detach count to set default parameters
     void update_detach_value();
 
-    //保存内存分析结果响应槽函数
+    //Save memory analysis result response slot function
     void on_saveButton_clicked();
 
+    //Plot the memory usage of the memory pool
+    void paint_memory_pool_usage(QAreaSeries *series , int color, QString name,
+                                 QLineSeries* upper_boundary, QLineSeries* lower_boundary);
 
 private:
-
-    void wheelEvent(QWheelEvent *event);
 
     Ui::MainWindow *ui;
     QSerialPort serial;
     ChartView *chartView;
-    QChart* m_chart_1;// 图表对象
+    QChart* memory_pool_chart;//Simulate memory pool container
 
-    QLineSeries* series0 = NULL;
-    QLineSeries* series1 = NULL;
+    //Record and the number of lines analyzed by recvlineEdit
+    int recvEdit_analyzed_number = 0;
 
-    QLineSeries* series2 = NULL;
-    QLineSeries* series3 = NULL;
+    //Clear excel parameters
+    int excel_row_count = 0;
+    int excel_column_count = 12;
 
-    QLineSeries* series4 = NULL;
-    QLineSeries* series5 = NULL;
+    //how many pieces of memory information were analyzed
+    uint sum_exec_count = 0;
 
+    int analyse_memory_count = 0;
 
-    QLineSeries* series6 = NULL;
-    QLineSeries* series7 = NULL;
+    //Need to create a new chartview container flag
+    int paint_multi_map_flag = 1;
 
-    QLineSeries* series8 = NULL;
-    QLineSeries* series9 = NULL;
+    /***The memory_pool's usage***/
 
-    QLineSeries* series10 = NULL;
-    QLineSeries* series11 = NULL;
+    //memory_pool_start_and_end_address
+    QString start_memory_address = "";
+    QString end_memory_address = "";
 
-    QLineSeries* series12 = NULL;
-    QLineSeries* series13 = NULL;
+    //Start address and end address of the memory pool after scaling
+    uint new_start_memory_address = 0;
+    uint new_end_memory_address = 0;
 
-    QLineSeries* series14 = NULL;
-    QLineSeries* series15 = NULL;
+    //free_memory
+    QAreaSeries* memory_free;
+    QLineSeries* upper_boundary_of_free_memory;
+    QLineSeries* lower_boundary_of_free_memory= NULL;
 
-    QLineSeries* series16 = NULL;
-    QLineSeries* series17 = NULL;
+    //first_segment_memory
+    QAreaSeries* memory_first_segment;
+    QLineSeries* upper_boundary_of_first_segment_memory = NULL;
+    QLineSeries* lower_boundary_of_first_segment_memory = NULL;
 
-    QLineSeries* series18 = NULL;
-    QLineSeries* series19 = NULL;
+    //second_segment_memory
+    QAreaSeries* memory_second_segment;
+    QLineSeries* upper_boundary_of_second_segment_memory = NULL;
+    QLineSeries* lower_boundary_of_second_segment_memory = NULL;
 
-    QLineSeries* series20 = NULL;
-    QLineSeries* series21 = NULL;
+    //third_segment_memory
+    QAreaSeries* memory_third_segment;
+    QLineSeries* upper_boundary_of_third_segment_memory = NULL;
+    QLineSeries* lower_boundary_of_third_segment_memory = NULL;
 
-    QXlsx::Document xlsx;
+    //fourth_segment_memory
+    QAreaSeries* memory_fourth_segment;
+    QLineSeries* upper_boundary_of_fourth_segment_memory = NULL;
+    QLineSeries* lower_boundary_of_fourth_segment_memory = NULL;
 
-    bool isStopping;
+    //fifth_segment_memory
+    QAreaSeries* memory_fifth_segment;
+    QLineSeries* upper_boundary_of_fifth_segment_memory = NULL;
+    QLineSeries* lower_boundary_of_fifth_segment_memory = NULL;
 
+    //sixth_segment_memory
+    QAreaSeries* memory_sixth_segment;
+    QLineSeries* upper_boundary_of_sixth_segment_memory = NULL;
+    QLineSeries* lower_boundary_of_sixth_segment_memory = NULL;
 
+    //seventh_segment_memory
+    QAreaSeries* memory_seventh_segment;
+    QLineSeries* upper_boundary_of_seventh_segment_memory = NULL;
+    QLineSeries* lower_boundary_of_seventh_segment_memory = NULL;
+
+    //eighth_segment_memory
+    QAreaSeries* memory_eighth_segment;
+    QLineSeries* upper_boundary_of_eighth_segment_memory = NULL;
+    QLineSeries* lower_boundary_of_eighth_segment_memory = NULL;
+
+    //ninth_segment_memory
+    QAreaSeries* memory_ninth_segment;
+    QLineSeries* upper_boundary_of_ninth_segment_memory = NULL;
+    QLineSeries* lower_boundary_of_ninth_segment_memory = NULL;
+
+    //ten_segment_memory
+    QAreaSeries* memory_tenth_segment;
+    QLineSeries* upper_boundary_of_tenth_segment_memory = NULL;
+    QLineSeries* lower_boundary_of_tenth_segment_memory = NULL;
+
+    QXlsx::Document xlsx;//save excel object
 
 };
 

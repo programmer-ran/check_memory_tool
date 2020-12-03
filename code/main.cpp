@@ -1,3 +1,12 @@
+/***************************************************************
+* Filename     : main.cpp
+* Description   : Build window application objects, add UI and
+*                 functions, and create database and total table
+*                 at the same time
+* Version      : 1.0
+* History       :
+* penghongran 2020-11-30  finished
+**************************************************************/
 #include "mainwindow.h"
 #include <QApplication>
 #include <QSqlDatabase>
@@ -8,34 +17,13 @@
 
 int main(int argc, char *argv[])
 {
+    //Create a memory analysis object
     QApplication a(argc, argv);
 
-
-    QFile delete_file("./MyDataBase.db");
-    if (delete_file.exists())
-    {
-        qDebug()<< "数据库查找成功";
-
-//        if(delete_file.remove())
-//        {
-//            qDebug() << "删除成功";
-//        }
-//        else
-//        {
-//            qDebug() << "删除失败";
-//            QMessageBox::about(NULL, "提示", "未初始化成功");
-//            return NULL;
-//        }
-    }
-    else
-    {
-        qDebug()<< "数据库查找失败";
-    }
-//
-    //建立并打开数据库
+    //Establish a connection to the database
     QSqlDatabase database;
     database = QSqlDatabase::addDatabase("QSQLITE");
-    database.setDatabaseName("MyDataBase.db");
+    database.setDatabaseName("Working_database.db");
     if (!database.open())
     {
         qDebug() << "Error: Failed to connect database." << database.lastError();
@@ -45,10 +33,14 @@ int main(int argc, char *argv[])
         qDebug() << "Succeed to connect database." ;
     }
 
+    //Add database complete table
     QSqlQuery query;
     query.exec("PRAGMA synchronous = OFF");
-    query.exec("create table malloc_and_free(id int primary key, date varchar, type varchar, malloc_address varchar, malloc_size int,  start_and_end_address varchar)");
+    query.exec("create table malloc_and_free(id int primary key,"
+               " date varchar, type varchar, malloc_address varchar,"
+               "malloc_size int,  start_and_end_address varchar)");
 
+    //Draw UI and functions for memory analysis objects
     MainWindow w;
     w.show();
 
